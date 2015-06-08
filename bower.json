@@ -1,0 +1,27 @@
+{
+  "name": "zl-contextmenu",
+  "version": "0.0.1",
+  "homepage": "https://github.com/ZenlabsFR/zl-contextmenu",
+  "authors": [
+    "Adam Timberlake <adam.timberlake@gmail.com>",
+    "ZenLabs SAS <developers@zenlabs.fr>"
+  ],
+  "description": "A simple context-menu for angular",
+  "main": "dist/zl-contextmenu.js",
+  "keywords": [
+    "angular",
+    "context",
+    "menu",
+    "right",
+    "click"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/components",
+    "test",
+    "tests"
+  ]
+}
