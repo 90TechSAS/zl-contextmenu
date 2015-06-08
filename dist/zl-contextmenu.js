@@ -144,7 +144,7 @@
 
                             menu.css({
 
-                                position: 'absolute',
+                                position: 'fixed',
                                 transform: $interpolate('translate({{x}}px, {{y}}px)')({
                                     x: scope.position.x, y: scope.position.y
                                 })
