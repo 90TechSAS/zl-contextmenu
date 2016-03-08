@@ -1,182 +1,201 @@
-(function ContextMenu($angular, $document) {
+;(function ContextMenu($angular, $document) {
 
-    "use strict";
+  "use strict"
+
+  /**
+   * @module ngContextMenu
+   * @author Adam Timberlake
+   * @link https://github.com/Wildhoney/ngContextMenu
+   */
+  var module = $angular.module('zlContextMenu', [])
+
+  /**
+   * @module ngContextMenu
+   * @service ContextMenu
+   * @author Adam Timberlake
+   * @link https://github.com/Wildhoney/ngContextMenu
+   */
+  module.factory('contextMenu', ['$rootScope', function contextMenuService($rootScope) {
 
     /**
-     * @module ngContextMenu
-     * @author Adam Timberlake
-     * @link https://github.com/Wildhoney/ngContextMenu
+     * @method cancelAll
+     * @return {void}
      */
-    var module = $angular.module('zlContextMenu', []);
+    function cancelAll() {
+      $rootScope.$broadcast('context-menu/close')
+    }
 
-    /**
-     * @module ngContextMenu
-     * @service ContextMenu
-     * @author Adam Timberlake
-     * @link https://github.com/Wildhoney/ngContextMenu
-     */
-    module.factory('contextMenu', ['$rootScope', function contextMenuService($rootScope) {
+    return {
+      cancelAll: cancelAll,
+      eventBound: false
+    }
+
+  }])
+
+  /**
+   * @module ngContextMenu
+   * @directive contextMenu
+   * @author Adam Timberlake
+   * @link https://github.com/Wildhoney/ngContextMenu
+   */
+  module.directive('contextMenu', ['$http', '$templateCache', '$interpolate', '$compile', 'contextMenu',
+
+    function contextMenuDirective($http, $templateCache, $interpolate, $compile, contextMenu) {
+
+      return {
 
         /**
-         * @method cancelAll
+         * @property restrict
+         * @type {String}
+         */
+        restrict: 'EA',
+
+        /**
+         * @property scope
+         * @type {Boolean}
+         */
+        scope: true,
+
+        /**
+         * @property require
+         * @type {String}
+         */
+        require: '?ngModel',
+
+        /**
+         * @method link
+         * @param {Object} scope
+         * @param {angular.element} element
+         * @param {Object} attributes
+         * @param {Object} model
          * @return {void}
          */
-        function cancelAll() {
-            $rootScope.$broadcast('context-menu/close');
-        }
+        link: function link(scope, element, attributes, model) {
 
-        return { cancelAll: cancelAll, eventBound: false };
+          if (!contextMenu.eventBound) {
 
-    }]);
+            // Bind to the `document` if we haven't already.
+            $document.addEventListener('click', function click() {
+              contextMenu.cancelAll()
+              scope.$apply()
+            });
 
-    /**
-     * @module ngContextMenu
-     * @directive contextMenu
-     * @author Adam Timberlake
-     * @link https://github.com/Wildhoney/ngContextMenu
-     */
-    module.directive('contextMenu', ['$http', '$templateCache', '$interpolate', '$compile', 'contextMenu',
+            contextMenu.eventBound = true;
 
-        function contextMenuDirective($http, $templateCache, $interpolate, $compile, contextMenu) {
+          }
 
-            return {
+          /**
+           * @method closeMenu
+           * @return {void}
+           */
+          function closeMenu() {
 
-                /**
-                 * @property restrict
-                 * @type {String}
-                 */
-                restrict: 'EA',
+            if (scope.menu) {
+              scope.menu.remove()
+              scope.menu = null
+              scope.position = null
+            }
 
-                /**
-                 * @property scope
-                 * @type {Boolean}
-                 */
-                scope: true,
+          }
 
-                /**
-                 * @property require
-                 * @type {String}
-                 */
-                require: '?ngModel',
+          scope.$on('context-menu/close', closeMenu)
 
-                /**
-                 * @method link
-                 * @param {Object} scope
-                 * @param {angular.element} element
-                 * @param {Object} attributes
-                 * @param {Object} model
-                 * @return {void}
-                 */
-                link: function link(scope, element, attributes, model) {
+          /**
+           * @method getModel
+           * @return {Object}
+           */
+          function getModel() {
+            return model ? $angular.extend(scope, model.$modelValue) : scope
+          }
 
-                    if (!contextMenu.eventBound) {
+          /**
+           * @method render
+           * @param {Object} event
+           * @param {String} [strategy="append"]
+           * @return {void}
+           */
+          function render(event, strategy) {
 
-                        // Bind to the `document` if we haven't already.
-                        $document.addEventListener('click', function click() {
-                            contextMenu.cancelAll();
-                            scope.$apply();
-                        });
+            strategy = strategy || 'append'
 
-                        contextMenu.eventBound = true;
+            if ('preventDefault' in event) {
 
-                    }
+              contextMenu.cancelAll()
+              event.stopPropagation()
+              event.preventDefault()
+              scope.position = {
+                x: event.clientX,
+                y: event.clientY
+              }
 
-                    /**
-                     * @method closeMenu
-                     * @return {void}
-                     */
-                    function closeMenu() {
+            } else {
 
-                        if (scope.menu) {
-                            scope.menu.remove();
-                            scope.menu     = null;
-                            scope.position = null;
-                        }
-
-                    }
-
-                    scope.$on('context-menu/close', closeMenu);
-
-                    /**
-                     * @method getModel
-                     * @return {Object}
-                     */
-                    function getModel() {
-                        return model ? $angular.extend(scope, model.$modelValue) : scope;
-                    }
-
-                    /**
-                     * @method render
-                     * @param {Object} event
-                     * @param {String} [strategy="append"]
-                     * @return {void}
-                     */
-                    function render(event, strategy) {
-
-                        strategy = strategy || 'append';
-
-                        if ('preventDefault' in event) {
-
-                            contextMenu.cancelAll();
-                            event.stopPropagation();
-                            event.preventDefault();
-                            scope.position = { x: event.clientX, y: event.clientY };
-
-                        } else {
-
-                            if (!scope.menu) {
-                                return;
-                            }
-
-                        }
-
-                        $http.get(attributes.contextMenu, { cache: $templateCache }).then(function then(response) {
-
-                            var interpolated = $interpolate(response.data)($angular.extend(getModel())),
-                                compiled     = $compile(interpolated)(scope),
-                                menu         = $angular.element(compiled);
-
-                            // Determine whether to append new, or replace an existing.
-                            switch (strategy) {
-                                case ('append'): element.append(menu); break;
-                                default: scope.menu.replaceWith(menu); break;
-                            }
-
-                            menu.css({
-
-                                position: 'fixed',
-                                transform: $interpolate('translate({{x}}px, {{y}}px)')({
-                                    x: scope.position.x, y: scope.position.y
-                                })
-
-                            });
-
-                            scope.menu = menu;
-                            scope.menu.bind('click', closeMenu);
-
-                        });
-
-                    }
-
-                    if (model) {
-
-                        var listener = function listener() {
-                            return model.$modelValue;
-                        };
-
-                        // Listen for updates to the model...
-                        scope.$watch(listener, function modelChanged() {
-                            render({}, 'replaceWith');
-                        }, true);
-
-                    }
-
-                    element.bind(attributes.contextEvent || 'contextmenu', render);
-
-                }
+              if (!scope.menu) {
+                return
+              }
 
             }
 
-        }]);
+            $http.get(attributes.contextMenu, {
+              cache: $templateCache
+            }).then(function then(response) {
+
+              var interpolated = $interpolate(response.data)($angular.extend(getModel())),
+                      compiled = $compile(interpolated)(scope),
+                          menu = $angular.element(compiled)
+
+              // Determine whether to append new, or replace an existing.
+              switch (strategy) {
+                case ('append'):
+                  element.append(menu)
+                  break
+                default:
+                  scope.menu.replaceWith(menu)
+                  break
+              }
+
+              var x = scope.position.x,
+                  y = scope.position.y
+              var offsetWidth =  menu.prop('offsetWidth'),
+                  offsetHeight =  menu.prop('offsetHeight')
+              var positionMenuRight = x + offsetWidth,
+                  positionMenuTop = y + offsetHeight
+
+              // if the div of the context-menu is out of the screen on the right, invert the x position
+              if(document.documentElement.offsetWidth < positionMenuRight){
+                x = x - offsetWidth
+              }
+              // if the div of the context-menu is out of the screen on the bottom, invert the y position
+              if(document.documentElement.offsetHeight < positionMenuTop){
+                y = y - (offsetHeight + 30)
+              }
+
+              menu.css({
+                position: 'fixed',
+                transform: $interpolate('translate({{x}}px, {{y}}px)')({
+                  x: x,
+                  y: y
+                })
+
+              })
+              scope.menu = menu
+              scope.menu.bind('click', closeMenu)
+            });
+
+          }
+          if (model) {
+            var listener = function listener() {
+              return model.$modelValue
+            }
+            // Listen for updates to the model...
+            scope.$watch(listener, function modelChanged() {
+              render({}, 'replaceWith')
+            }, true)
+          }
+          element.bind(attributes.contextEvent || 'contextmenu', render)
+        }
+      }
+    }
+  ])
 
 })(window.angular, window.document);
