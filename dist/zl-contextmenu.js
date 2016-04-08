@@ -172,11 +172,12 @@
 
               menu.css({
                 position: 'fixed',
-                transform: $interpolate('translate({{x}}px, {{y}}px)')({
-                  x: x,
+                top: $interpolate('{{y}}px')({
                   y: y
+                }),
+                left: $interpolate('{{x}}px')({
+                  x:x
                 })
-
               })
               scope.menu = menu
               scope.menu.bind('click', closeMenu)
