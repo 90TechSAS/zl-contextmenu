@@ -77,7 +77,7 @@
             // Bind to the `document` if we haven't already.
             $document.addEventListener('click', function click() {
               contextMenu.cancelAll()
-              scope.$apply()
+              // scope.$apply()
             });
 
             contextMenu.eventBound = true;
