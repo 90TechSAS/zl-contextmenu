@@ -38,9 +38,9 @@
    * @author Adam Timberlake
    * @link https://github.com/Wildhoney/ngContextMenu
    */
-  module.directive('contextMenu', ['$http', '$templateCache', '$interpolate', '$compile', 'contextMenu',
+  module.directive('contextMenu', ['$http', '$templateCache', '$interpolate', '$compile', 'contextMenu', '$timeout',
 
-    function contextMenuDirective($http, $templateCache, $interpolate, $compile, contextMenu) {
+    function contextMenuDirective($http, $templateCache, $interpolate, $compile, contextMenu, $timeout) {
 
       return {
 
@@ -144,43 +144,46 @@
                       compiled = $compile(interpolated)(scope),
                           menu = $angular.element(compiled)
 
-              // Determine whether to append new, or replace an existing.
-              switch (strategy) {
-                case ('append'):
-                  element.append(menu)
-                  break
-                default:
-                  scope.menu.replaceWith(menu)
-                  break
-              }
 
-              var x = scope.position.x,
+              $timeout(function () {
+                // Determine whether to append new, or replace an existing.
+                switch (strategy) {
+                  case ('append'):
+                    element.append(menu)
+                    break
+                  default:
+                    scope.menu.replaceWith(menu)
+                    break
+                }
+                var x = scope.position.x,
                   y = scope.position.y
-              var offsetWidth =  menu.prop('offsetWidth'),
+                var offsetWidth =  menu.prop('offsetWidth'),
                   offsetHeight =  menu.prop('offsetHeight')
-              var positionMenuRight = x + offsetWidth,
+                var positionMenuRight = x + offsetWidth,
                   positionMenuTop = y + offsetHeight
 
-              // if the div of the context-menu is out of the screen on the right, invert the x position
-              if(document.documentElement.offsetWidth < positionMenuRight){
-                x = x - offsetWidth
-              }
-              // if the div of the context-menu is out of the screen on the bottom, invert the y position
-              if(document.documentElement.offsetHeight < positionMenuTop){
-                y = y - (offsetHeight + 30)
-              }
+                // if the div of the context-menu is out of the screen on the right, invert the x position
+                if(document.documentElement.offsetWidth < positionMenuRight){
+                  x = x - offsetWidth
+                }
+                // if the div of the context-menu is out of the screen on the bottom, invert the y position
+                if(document.documentElement.offsetHeight < positionMenuTop){
+                  y = y - (offsetHeight)
+                }
 
-              menu.css({
-                position: 'fixed',
-                top: $interpolate('{{y}}px')({
-                  y: y
-                }),
-                left: $interpolate('{{x}}px')({
-                  x:x
+                menu.css({
+                  position: 'fixed',
+                  top: $interpolate('{{y}}px')({
+                    y: y
+                  }),
+                  left: $interpolate('{{x}}px')({
+                    x:x
+                  })
                 })
+                scope.menu = menu
+                scope.menu.bind('click', closeMenu)
               })
-              scope.menu = menu
-              scope.menu.bind('click', closeMenu)
+
             });
 
           }
