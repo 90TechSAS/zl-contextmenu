@@ -149,7 +149,7 @@
                 // Determine whether to append new, or replace an existing.
                 switch (strategy) {
                   case ('append'):
-                    element.append(menu)
+                    window.document.body.appendChild(menu[0])
                     break
                   default:
                     scope.menu.replaceWith(menu)
